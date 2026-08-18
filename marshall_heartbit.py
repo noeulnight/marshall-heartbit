@@ -102,17 +102,19 @@ async def serve() -> None:
     state = {"volume": volume, "last_success": None, "last_error": None}
     client: BleakClient | None = None
 
+    async def connect() -> BleakClient:
+        nonlocal client
+        if client is None or not client.is_connected:
+            device = await BleakScanner.find_device_by_address(mac, timeout=5)
+            client = BleakClient(device or mac)
+            await client.connect()
+        return client
+
     async def write(characteristic: str, data: bytes) -> None:
         nonlocal client
         async with lock:
             try:
-                if client is None or not client.is_connected:
-                    device = await BleakScanner.find_device_by_address(mac, timeout=15)
-                    if device is None:
-                        raise RuntimeError(f"device not found: {mac}")
-                    client = BleakClient(device)
-                    await client.connect()
-                await client.write_gatt_char(characteristic, data, response=True)
+                await (await connect()).write_gatt_char(characteristic, data, response=True)
             except Exception:
                 if client is not None:
                     with contextlib.suppress(Exception):
@@ -126,13 +128,7 @@ async def serve() -> None:
         nonlocal client
         async with lock:
             try:
-                if client is None or not client.is_connected:
-                    device = await BleakScanner.find_device_by_address(mac, timeout=15)
-                    if device is None:
-                        raise RuntimeError(f"device not found: {mac}")
-                    client = BleakClient(device)
-                    await client.connect()
-                return bytes(await client.read_gatt_char(characteristic))
+                return bytes(await (await connect()).read_gatt_char(characteristic))
             except Exception:
                 if client is not None:
                     with contextlib.suppress(Exception):
