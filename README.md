@@ -1,11 +1,11 @@
 # Marshall Heartbit
 
-마샬 스피커에 주기적으로 Bluetooth 연결을 요청해 절전 상태에서 깨우는 Raspberry Pi용
-서비스입니다.
+마샬 스피커의 볼륨 characteristic에 주기적으로 값을 써서 절전 상태에서 깨우는
+Raspberry Pi용 BLE 서비스입니다.
 
-ACTON II는 Classic Bluetooth로만 광고하며 Raspberry Pi의 BlueZ에는 오디오 프로필만
-노출됩니다. 실제 장치에서 연결과 페어링에 성공했으며, 컨테이너는 system D-Bus의
-`org.bluez.Device1.Connect`를 기본 60초마다 호출합니다.
+ACTON II 패킷 캡처에서 확인한 characteristic UUID
+`44FA50B2-D0A3-472E-A939-D80CF17638BB`에 기본값 `0x1E`를 60초마다 Write Request로
+전송합니다. 볼륨 범위는 0–30입니다.
 
 ```bash
 cp .env.example .env
@@ -13,5 +13,4 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-호스트에서 BlueZ가 실행 중이어야 합니다. 최초 연결 때 스피커가 페어링 가능한 상태여야
-하며 이후에는 저장된 페어링을 재사용합니다.
+호스트에서 BlueZ가 실행 중이어야 합니다.
