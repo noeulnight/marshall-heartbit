@@ -1,16 +1,26 @@
-# Marshall Heartbit
+# Marshall API
 
-마샬 스피커의 볼륨 characteristic에 주기적으로 값을 써서 절전 상태에서 깨우는
-Raspberry Pi용 BLE 서비스입니다.
-
-ACTON II 패킷 캡처에서 확인한 characteristic UUID
-`44FA50B2-D0A3-472E-A939-D80CF17638BB`에 기본값 `0x20`을 60초마다 Write Request로
-전송합니다. 볼륨 범위는 0–32입니다.
+Raspberry Pi에서 ACTON II를 제어하는 BLE HTTP API입니다. 볼륨 `0x20`을 기본 60초마다
+전송하는 heartbeat도 유지합니다.
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 docker compose logs -f
 ```
+
+```bash
+curl localhost:8080/health
+curl -X PUT localhost:8080/settings/volume -H 'content-type: application/json' -d '{"value":32}'
+curl -X PUT localhost:8080/settings/source -H 'content-type: application/json' -d '{"value":"bluetooth"}'
+curl -X PUT localhost:8080/settings/interaction-sounds -H 'content-type: application/json' -d '{"enabled":true}'
+curl -X PUT localhost:8080/settings/equalizer -H 'content-type: application/json' -d '{"bands":[5,5,5,5,5]}'
+curl -X PUT localhost:8080/settings/light -H 'content-type: application/json' -d '{"value":69}'
+curl -X PUT localhost:8080/settings/name -H 'content-type: application/json' -d '{"value":"ACTON II"}'
+curl -X POST localhost:8080/heartbeat
+```
+
+볼륨 범위는 0–32, EQ 다섯 밴드는 각각 0–10, LED 밝기는 0–69, 이름은 UTF-8
+17바이트까지입니다. 소스는 `bluetooth` 또는 `aux`입니다.
 
 호스트에서 BlueZ가 실행 중이어야 합니다.

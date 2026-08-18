@@ -3,6 +3,7 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "8080:8080"
     volumes:
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
-
