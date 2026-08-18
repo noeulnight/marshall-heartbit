@@ -13,10 +13,10 @@ def config() -> tuple[str, str, int, int]:
     characteristic = os.environ.get(
         "MARSHALL_VOLUME_UUID", "44FA50B2-D0A3-472E-A939-D80CF17638BB"
     )
-    volume = int(os.environ.get("MARSHALL_VOLUME", "30"), 0)
+    volume = int(os.environ.get("MARSHALL_VOLUME", "32"), 0)
     interval = int(os.environ.get("HEARTBEAT_INTERVAL", "60"))
-    if not 0 <= volume <= 30:
-        raise ValueError("MARSHALL_VOLUME must be between 0 and 30")
+    if not 0 <= volume <= 32:
+        raise ValueError("MARSHALL_VOLUME must be between 0 and 32")
     if interval < 1:
         raise ValueError("HEARTBEAT_INTERVAL must be at least 1 second")
     return mac, characteristic, volume, interval
@@ -31,7 +31,7 @@ async def run() -> None:
                 raise RuntimeError(f"device not found: {mac}")
             async with BleakClient(device) as client:
                 await client.write_gatt_char(characteristic, bytes([volume]), response=True)
-                logging.info("heartbeat: wrote volume=%d/30 to %s", volume, mac)
+                logging.info("heartbeat: wrote volume=%d/32 to %s", volume, mac)
         except Exception as exc:
             logging.warning("BLE %s: %s", type(exc).__name__, exc)
         await asyncio.sleep(interval)

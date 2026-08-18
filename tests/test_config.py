@@ -8,7 +8,7 @@ def test_config(monkeypatch):
     assert marshall_heartbit.config() == (
         "00:12:6F:12:C2:EC",
         "44FA50B2-D0A3-472E-A939-D80CF17638BB",
-        30,
+        32,
         60,
     )
 
