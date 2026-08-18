@@ -74,9 +74,9 @@ def setting_value(setting: str, data: bytes):
     if setting == "volume":
         return data[0]
     if setting == "source":
-        return {0x0C: "bluetooth", 0x0D: "aux"}.get(data[0])
+        return {1: "aux", 3: "bluetooth"}.get(data[0])
     if setting == "interaction-sounds":
-        return {0x10: False, 0x11: True}.get(data[0])
+        return bool(data[3])
     if setting == "equalizer":
         return list(data)
     if setting == "light":

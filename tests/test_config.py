@@ -18,8 +18,9 @@ def test_config_and_payloads(monkeypatch):
     assert marshall.setting_payload("light", {"value": 69})[1] == b"\x45"
     assert marshall.setting_payload("name", {"value": "ACTON II"})[1] == b"\x01\x08ACTON II"
     assert marshall.setting_value("volume", b"\x20") == 32
-    assert marshall.setting_value("source", b"\x0d") == "aux"
-    assert marshall.setting_value("interaction-sounds", b"\x11") is True
+    assert marshall.setting_value("source", bytes([1, 0, 0, 1, 1])) == "aux"
+    assert marshall.setting_value("source", bytes([3, 2, 0, 1, 1])) == "bluetooth"
+    assert marshall.setting_value("interaction-sounds", bytes([3, 2, 0, 0, 1])) is False
     assert marshall.setting_value("equalizer", bytes([1, 2, 3, 4, 5])) == [1, 2, 3, 4, 5]
     assert marshall.setting_value("light", b"\x45") == 69
     assert marshall.setting_value("name", b"\x01\x08ACTON II") == "ACTON II"
