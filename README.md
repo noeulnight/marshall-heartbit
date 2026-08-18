@@ -28,3 +28,4 @@ curl -X POST localhost:8080/heartbeat
 17바이트까지입니다. 소스는 `bluetooth` 또는 `aux`입니다.
 
 호스트에서 BlueZ가 실행 중이어야 합니다.
+`HEARTBEAT_INTERVAL=0`이면 API만 실행하고 heartbeat는 보내지 않습니다.

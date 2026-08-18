@@ -25,8 +25,8 @@ def config() -> tuple[str, int, int, int]:
     port = int(os.environ.get("API_PORT", "8080"))
     if not 0 <= volume <= 32:
         raise ValueError("MARSHALL_VOLUME must be between 0 and 32")
-    if interval < 1:
-        raise ValueError("HEARTBEAT_INTERVAL must be at least 1 second")
+    if interval < 0:
+        raise ValueError("HEARTBEAT_INTERVAL must be zero or greater")
     if not 1 <= port <= 65535:
         raise ValueError("API_PORT must be between 1 and 65535")
     return mac, volume, interval, port
@@ -226,11 +226,12 @@ async def serve() -> None:
     await runner.setup()
     await web.TCPSite(runner, "0.0.0.0", port).start()
     logging.info("API listening on :%d", port)
-    task = asyncio.create_task(heartbeat())
+    task = asyncio.create_task(heartbeat()) if interval else None
     try:
         await asyncio.Event().wait()
     finally:
-        task.cancel()
+        if task is not None:
+            task.cancel()
         if client is not None:
             with contextlib.suppress(Exception):
                 await client.disconnect()

@@ -6,6 +6,8 @@ import marshall_heartbit as marshall
 def test_config_and_payloads(monkeypatch):
     monkeypatch.setenv("MARSHALL_MAC", "00:12:6F:12:C2:EC")
     assert marshall.config() == ("00:12:6F:12:C2:EC", 32, 60, 8080)
+    monkeypatch.setenv("HEARTBEAT_INTERVAL", "0")
+    assert marshall.config() == ("00:12:6F:12:C2:EC", 32, 0, 8080)
     assert marshall.setting_payload("volume", {"value": 32}) == (
         marshall.VOLUME_UUID,
         b"\x20",
