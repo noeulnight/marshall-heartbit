@@ -97,6 +97,14 @@ SETTING_UUIDS = {
 }
 
 
+def volume_percent(value: int) -> int:
+    return round(value * 100 / 32)
+
+
+def volume_from_percent(value: int) -> int:
+    return round(value * 32 / 100)
+
+
 async def serve() -> None:
     mac, volume, interval, port = config()
     lock = asyncio.Lock()
@@ -178,6 +186,23 @@ async def serve() -> None:
             state["last_error"] = f"{type(exc).__name__}: {exc}"
             return web.json_response({"error": state["last_error"]}, status=503)
 
+    async def homebridge_volume(request: web.Request) -> web.Response:
+        try:
+            if request.method == "PUT":
+                percent = (await request.json()).get("value")
+                if type(percent) is not int or not 0 <= percent <= 100:
+                    raise ValueError("value must be an integer between 0 and 100")
+                state["volume"] = volume_from_percent(percent)
+                await write(VOLUME_UUID, bytes([state["volume"]]))
+            else:
+                state["volume"] = (await read(VOLUME_UUID))[0]
+            return web.json_response({"value": volume_percent(state["volume"])})
+        except (ValueError, TypeError, web.HTTPBadRequest) as exc:
+            return web.json_response({"error": str(exc)}, status=400)
+        except Exception as exc:
+            state["last_error"] = f"{type(exc).__name__}: {exc}"
+            return web.json_response({"error": state["last_error"]}, status=503)
+
     async def heartbeat_now(_: web.Request) -> web.Response:
         try:
             await write(VOLUME_UUID, bytes([state["volume"]]))
@@ -192,6 +217,8 @@ async def serve() -> None:
             web.get("/health", health),
             web.get("/settings/{setting}", get_setting),
             web.put("/settings/{setting}", update),
+            web.get("/homebridge/volume", homebridge_volume),
+            web.put("/homebridge/volume", homebridge_volume),
             web.post("/heartbeat", heartbeat_now),
         ]
     )

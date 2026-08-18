@@ -13,6 +13,8 @@ docker compose logs -f
 curl localhost:8080/health
 curl localhost:8080/settings/volume
 curl localhost:8080/settings/source
+curl localhost:8080/homebridge/volume
+curl -X PUT localhost:8080/homebridge/volume -H 'content-type: application/json' -d '{"value":50}'
 curl -X PUT localhost:8080/settings/volume -H 'content-type: application/json' -d '{"value":32}'
 curl -X PUT localhost:8080/settings/source -H 'content-type: application/json' -d '{"value":"bluetooth"}'
 curl -X PUT localhost:8080/settings/interaction-sounds -H 'content-type: application/json' -d '{"enabled":true}'

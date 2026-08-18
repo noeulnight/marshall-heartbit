@@ -24,5 +24,8 @@ def test_config_and_payloads(monkeypatch):
     assert marshall.setting_value("equalizer", bytes([1, 2, 3, 4, 5])) == [1, 2, 3, 4, 5]
     assert marshall.setting_value("light", b"\x45") == 69
     assert marshall.setting_value("name", b"\x01\x08ACTON II") == "ACTON II"
+    assert marshall.volume_from_percent(50) == 16
+    assert marshall.volume_percent(16) == 50
+    assert marshall.volume_from_percent(100) == 32
     with pytest.raises(ValueError, match="five integers"):
         marshall.setting_payload("equalizer", {"bands": [11] * 5})
