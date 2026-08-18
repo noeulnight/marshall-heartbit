@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 from aiohttp import web
 from bleak import BleakClient, BleakScanner
+from bleak.backends.device import BLEDevice
 
 VOLUME_UUID = "44FA50B2-D0A3-472E-A939-D80CF17638BB"
 CONTROL_UUID = "4446CF5F-12F2-4C1E-AFE1-B15797535BA8"
@@ -106,7 +107,10 @@ async def serve() -> None:
         nonlocal client
         if client is None or not client.is_connected:
             device = await BleakScanner.find_device_by_address(mac, timeout=5)
-            client = BleakClient(device or mac)
+            if device is None:
+                path = f"/org/bluez/hci0/dev_{mac.replace(':', '_')}"
+                device = BLEDevice(mac, "ACTON II", {"path": path, "props": {}})
+            client = BleakClient(device)
             await client.connect()
         return client
 
