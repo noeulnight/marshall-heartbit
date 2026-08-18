@@ -11,6 +11,8 @@ docker compose logs -f
 
 ```bash
 curl localhost:8080/health
+curl localhost:8080/settings/volume
+curl localhost:8080/settings/source
 curl -X PUT localhost:8080/settings/volume -H 'content-type: application/json' -d '{"value":32}'
 curl -X PUT localhost:8080/settings/source -H 'content-type: application/json' -d '{"value":"bluetooth"}'
 curl -X PUT localhost:8080/settings/interaction-sounds -H 'content-type: application/json' -d '{"enabled":true}'

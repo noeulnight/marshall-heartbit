@@ -70,6 +70,32 @@ def setting_payload(setting: str, body: dict) -> tuple[str, bytes]:
     raise ValueError(f"unknown setting: {setting}")
 
 
+def setting_value(setting: str, data: bytes):
+    if setting == "volume":
+        return data[0]
+    if setting == "source":
+        return {0x0C: "bluetooth", 0x0D: "aux"}.get(data[0])
+    if setting == "interaction-sounds":
+        return {0x10: False, 0x11: True}.get(data[0])
+    if setting == "equalizer":
+        return list(data)
+    if setting == "light":
+        return data[0]
+    if setting == "name":
+        return data[2 : 2 + data[1]].decode()
+    raise ValueError(f"unknown setting: {setting}")
+
+
+SETTING_UUIDS = {
+    "volume": VOLUME_UUID,
+    "source": CONTROL_UUID,
+    "interaction-sounds": CONTROL_UUID,
+    "equalizer": EQ_UUID,
+    "light": LIGHT_UUID,
+    "name": NAME_UUID,
+}
+
+
 async def serve() -> None:
     mac, volume, interval, port = config()
     lock = asyncio.Lock()
@@ -95,6 +121,24 @@ async def serve() -> None:
                 raise
             state["last_success"] = datetime.now(UTC).isoformat()
             state["last_error"] = None
+
+    async def read(characteristic: str) -> bytes:
+        nonlocal client
+        async with lock:
+            try:
+                if client is None or not client.is_connected:
+                    device = await BleakScanner.find_device_by_address(mac, timeout=15)
+                    if device is None:
+                        raise RuntimeError(f"device not found: {mac}")
+                    client = BleakClient(device)
+                    await client.connect()
+                return bytes(await client.read_gatt_char(characteristic))
+            except Exception:
+                if client is not None:
+                    with contextlib.suppress(Exception):
+                        await client.disconnect()
+                client = None
+                raise
 
     async def heartbeat() -> None:
         while True:
@@ -123,6 +167,17 @@ async def serve() -> None:
             state["last_error"] = f"{type(exc).__name__}: {exc}"
             return web.json_response({"error": state["last_error"]}, status=503)
 
+    async def get_setting(request: web.Request) -> web.Response:
+        setting = request.match_info["setting"]
+        try:
+            data = await read(SETTING_UUIDS[setting])
+            return web.json_response({"value": setting_value(setting, data), "raw": list(data)})
+        except KeyError:
+            return web.json_response({"error": f"unknown setting: {setting}"}, status=400)
+        except Exception as exc:
+            state["last_error"] = f"{type(exc).__name__}: {exc}"
+            return web.json_response({"error": state["last_error"]}, status=503)
+
     async def heartbeat_now(_: web.Request) -> web.Response:
         try:
             await write(VOLUME_UUID, bytes([state["volume"]]))
@@ -135,6 +190,7 @@ async def serve() -> None:
     app.add_routes(
         [
             web.get("/health", health),
+            web.get("/settings/{setting}", get_setting),
             web.put("/settings/{setting}", update),
             web.post("/heartbeat", heartbeat_now),
         ]
