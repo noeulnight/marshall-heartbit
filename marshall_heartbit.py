@@ -162,6 +162,10 @@ async def serve() -> None:
         return web.json_response({"mac": mac, **state})
 
     async def update(request: web.Request) -> web.Response:
+        if not interval:
+            return web.json_response(
+                {"error": "BLE settings are disabled while A2DP mode is active"}, status=409
+            )
         try:
             body = await request.json()
             characteristic, data = setting_payload(request.match_info["setting"], body)
@@ -176,6 +180,10 @@ async def serve() -> None:
             return web.json_response({"error": state["last_error"]}, status=503)
 
     async def get_setting(request: web.Request) -> web.Response:
+        if not interval:
+            return web.json_response(
+                {"error": "BLE settings are disabled while A2DP mode is active"}, status=409
+            )
         setting = request.match_info["setting"]
         try:
             data = await read(SETTING_UUIDS[setting])
