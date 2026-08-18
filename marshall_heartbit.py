@@ -74,19 +74,25 @@ async def serve() -> None:
     mac, volume, interval, port = config()
     lock = asyncio.Lock()
     state = {"volume": volume, "last_success": None, "last_error": None}
+    client: BleakClient | None = None
 
     async def write(characteristic: str, data: bytes) -> None:
+        nonlocal client
         async with lock:
-            device = await BleakScanner.find_device_by_address(mac, timeout=15)
-            if device is None:
-                raise RuntimeError(f"device not found: {mac}")
-            client = BleakClient(device)
             try:
-                await client.connect()
+                if client is None or not client.is_connected:
+                    device = await BleakScanner.find_device_by_address(mac, timeout=15)
+                    if device is None:
+                        raise RuntimeError(f"device not found: {mac}")
+                    client = BleakClient(device)
+                    await client.connect()
                 await client.write_gatt_char(characteristic, data, response=True)
-            finally:
-                with contextlib.suppress(Exception):
-                    await client.disconnect()
+            except Exception:
+                if client is not None:
+                    with contextlib.suppress(Exception):
+                        await client.disconnect()
+                client = None
+                raise
             state["last_success"] = datetime.now(UTC).isoformat()
             state["last_error"] = None
 
@@ -142,6 +148,9 @@ async def serve() -> None:
         await asyncio.Event().wait()
     finally:
         task.cancel()
+        if client is not None:
+            with contextlib.suppress(Exception):
+                await client.disconnect()
         await runner.cleanup()
 
 
